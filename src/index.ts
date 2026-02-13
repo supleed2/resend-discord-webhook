@@ -23,20 +23,28 @@ const Email = z.object({
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     if (request.method === "POST") {
+      const domain = new URL(request.url).hostname.slice(14);
       try {
         const text = await request.json();
         const email = Email.parse(text);
         const embed = new Embed()
+          .addField("Domain", domain, true)
           .addField("Type", email.type, true)
           .addField("Date & Time", email.created_at.toUTCString(), true)
-          .addField("\u200B", "\u200B", true)
           .addField("From", email.data.from, true)
           .addField("To", email.data.to.join(", "), true)
           .addField("Subject", email.data.subject, false);
         await new Webhook(env.WEBHOOK_URL).addEmbed(embed).send();
       } catch (e) {
-        console.error("Failed to parse email:", e);
-        await new Webhook(env.WEBHOOK_URL).setContent(`Failed to parse email: ${e}`).send();
+        if (e instanceof SyntaxError) {
+          console.log(domain, "Bad JSON", e);
+        } else if (e instanceof z.ZodError) {
+          console.log(domain, "Failed to parse email", e);
+          await new Webhook(env.WEBHOOK_URL).setContent(`${domain}: Failed to parse email: ${e}`).send();
+        } else {
+          console.log(domain, "Other error", e);
+          await new Webhook(env.WEBHOOK_URL).setContent(`${domain}: Other error: ${e}`).send();
+        }
       }
     }
     return new Response(null, {
