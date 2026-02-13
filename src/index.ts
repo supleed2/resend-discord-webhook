@@ -6,14 +6,18 @@ const Email = z.object({
   data: z.object({
     created_at: z.coerce.date(),
     from: z.string(),
-    headers: z.array(z.object({
-      name: z.string(),
-      value: z.string()
-    })).optional(),
+    headers: z
+      .array(
+        z.object({
+          name: z.string(),
+          value: z.string(),
+        }),
+      )
+      .optional(),
     subject: z.string(),
-    to: z.array(z.string()).nonempty()
+    to: z.array(z.string()).nonempty(),
   }),
-  type: z.string()
+  type: z.string(),
 });
 
 export default {
@@ -36,7 +40,7 @@ export default {
       }
     }
     return new Response(null, {
-      status: 200
+      status: 200,
     });
   },
 } satisfies ExportedHandler<Env>;
